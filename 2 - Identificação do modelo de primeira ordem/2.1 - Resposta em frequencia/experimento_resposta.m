@@ -1,6 +1,6 @@
 clear; clc;
 
-freqs = logspace(log10(0.189), log10(18.9), 10);
+freqs = logspace(log10(0.189), log10(18.9), 10)
 
 gjwdb = zeros(1, length(freqs));
 phi = zeros(1, length(freqs));
@@ -59,14 +59,14 @@ freqs_wn = 2 * pi * freqs;
 figure;
 subplot(2, 1, 1);
 semilogx(freqs, gjwdb, '-o');
-xlabel('Frequência (Hz)');
+xlabel('Frequência (rad/s)');
 ylabel('Ganho (dB)');
 title('Diagrama de Bode - Ganho');
 grid on;
 
 subplot(2, 1, 2);
 semilogx(freqs, phi, '-o');
-xlabel('Frequência (Hz)');
+xlabel('Frequência (rad/s)');
 ylabel('Defasagem (graus)');
 title('Diagrama de Bode - Fase');
 grid on;
@@ -94,25 +94,29 @@ g = polyval(coeffs, ww);
         g(i) = g(i) + y_zero;
     end
 
-KdB = mean(adjusted_gjwdb_points(1,1:2));
+KdB = mean(adjusted_gjwdb_points(1,1:2))
 
 semilogx(freqs_wn, [gjwdb; adjusted_gjwdb_points], '-o'); 
 hold on
+
+legend('real', 'ajustado')
 % semilogx(ww*2*pi, g, '--');
 
-yline(KdB, '--r', sprintf('x = %.2f', KdB));
-yline((KdB - 3), '--r', sprintf('x = %.2f', KdB - 3));
+yline(KdB, '--r', sprintf('y = %.2f', KdB));
+yline((KdB - 3), '--r', sprintf('y = %.2f', KdB - 3));
 % xline ((8.82), '--r', 'y = 8.82');
 % xline ((1.4037), '--r', 'y = 1.4037');
 
 K = 10^(KdB/20)
 
 [~, idx] = min(abs(adjusted_gjwdb_points - (KdB-3)));
-freq_corte = freqs_wn(idx);
+freq_corte = freqs_wn(idx)
 tau = 1/freq_corte
 
+xline(freq_corte, '--r', sprintf('x = %.2f', freq_corte));
+
 xlabel('w');
-ylabel('db');
+ylabel('dB');
 
 title('Ajuste por aproximação linear de gjwdb');
 
@@ -142,9 +146,9 @@ semilogx(freqs, gjwdb, 'o');
 hold off;
 grid on;
 title('Diagrama de Bode - Ganho');
-xlabel('Frequência (Hz)');
+xlabel('Frequência (rad/s)');
 ylabel('Magnitude / Ganho (dB)');
-legend('Magnitude (dB)', 'Ganho (dB)', 'Location', 'best');
+legend('modelo', 'real', 'Location', 'best');
 
 % Segundo subplot - Fase
 subplot(2, 1, 2);
@@ -154,6 +158,6 @@ semilogx(freqs, phi, 'o');
 hold off;
 grid on;
 title('Diagrama de Bode - Fase');
-xlabel('Frequência (Hz)');
+xlabel('Frequência (rad/s)');
 ylabel('Fase (graus)');
-legend('Fase (graus)', 'Defasagem (graus)', 'Location', 'best');
+legend('modelo', 'real', 'Location', 'best');
