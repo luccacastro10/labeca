@@ -1,84 +1,90 @@
-clear, clc
-% Determinando Região Linear de Operação
+%clear all
 
-% Dados de tensão de entrada (Va), saída (Vt) e velocidade angular (w)
-Va = [0, 0.029064, 0.78054, 1.1635, 1.8808, 2.2112, 2.8303, 3.2567, 3.5928, 4.1681, 4.5053, 5.0858, 5.4667, 6.1924, 6.8298, 7.8074, 8.383, 9.320, 10.201, 11.186, 12.386, 13.150, 14.163, 15.418, 16.158, 17.517, 18.532, 20.234]';
-Vt = [0, -0.0005908, -0.0043344, -0.0067431, -0.011596, -0.014576, 1.2643, 1.8703, 2.2837, 3.0337, 3.5945, 4.4143, 4.9795, 5.9835, 6.819, 8.2149, 8.9774, 10.404, 11.577, 13.006, 14.684, 15.594, 16.191, 18.692, 19.701, 21.517, 22.922, 25.378]';
-W = [0, 0, 0, 0, 0, 33.2, 79.6, 116.5, 144.0, 199.1, 228.1, 274.5, 318.6, 373.1, 438.2, 516.7, 562.5, 652.4, 729.0, 818.0, 916.0, 983.0, 1066.0, 1183.0, 1249.0, 1252.0, 1449, 1612]';
+filename = 'dados/dadoslinear.CSV'; % Substitua pelo nome do seu arquivo
+data = readtable(filename);
 
+data.Properties.VariableNames = {'Tempo', 'Va', 'Vt', 'Ia'};
 
-% Filtrando os pontos dentro da região de estabilidade
-limite_inferior = 3.25;
-limite_superior = 20.234;
+% t = data.Tempo;
+% Va = data.Va;
+% Vt = data.Vt;
+% Ia = 20* data.Ia;
 
-Va_linear = Va(Va >= limite_inferior & Va <= limite_superior);
-Vt_linear = Vt(Va >= limite_inferior & Va <= limite_superior);
-W_linear = W(Va >= limite_inferior & Va <= limite_superior);
+ganho_corrente = 10;
 
-% Corrigindo o ponto inicial para passar no 0,0
-Va_linear_offset = Va_linear(1);
-Vt_linear_offset = Vt_linear(1);
-W_linear_offset = W_linear(1);
+t = data.Tempo(2:2:end);
+Va = (data.Va(2:2:end)+data.Va(1:2:end))/2;
+Vt = (data.Vt(2:2:end)+data.Vt(1:2:end))/2;
+Ia = (ganho_corrente *data.Ia(2:2:end)+ ganho_corrente*data.Ia(1:2:end))/2;
 
-for i = 1:size(Vt_linear)
-    Vt_linear(i) = Vt_linear(i) - Vt_linear_offset;
-    Va_linear(i) = Va_linear(i) - Va_linear_offset;
-    W_linear(i) = W_linear(i) - W_linear_offset;
-end
+Va = Va - Va(1);
+Vt = Vt - Vt(1);
+Ia = Ia - Ia(1);
 
-K_barra = ((Va_linear)'*(Vt_linear))/((Va_linear)'*(Va_linear))
-K_t = ((W_linear)'*(Vt_linear))/((W_linear)'*(W_linear))
-K_g = K_t/K_barra
-K_a = K_g
-
-% Carregando os dados do experimento de identificacao dos parametros de 2a
-% ordem:
-
-% Nome do arquivo
-arquivo = 'dados/dadoslinear.CSV';
-
-% Ler os dados do arquivo CSV
-dados = readtable(arquivo);
-ganho_sensor_corrente = 20;
-
-% Extrair as colunas
-t = dados{2:2:end, 1}; % Coluna 't in s'
-Va = dados{2:2:end, 2};    % Coluna 'C1 in V'
-Vt = dados{2:2:end, 3};    % Coluna 'C2 in V'
-Ia = ganho_sensor_corrente*dados{2:2:end, 4};    % Coluna 'C4 in V'
-h = t(2) - t(1);
+% t = data.Tempo(1:2:end);
+% Va = data.Va(1:2:end);
+% Vt = data.Vt(1:2:end);
+% Ia = 20* data.Ia(1:2:end);
 
 
-ue = zeros(size(t));
-um = zeros(size(t));
 
-for tk_i = 1:size(t)
-    ue(tk_i) = Va(tk_i)-(K_g/K_t)*Vt(tk_i);
-    um(tk_i) = K_a*K_t*Ia(tk_i);
-end
+kt = 0.0159;
+k = 1.380;
+ka = k/kt;
 
-Me = [Ia(1:end-1), ue(1:end-1)];
-Mm = [Vt(1:end-1), um(1:end-1)];
+kg = kt/k;
 
 
-ia_barra = Ia(2:end);
-vt_barra = Vt(2:end);
+ue = Va - (kg/kt)*Vt;
 
-xe = inv(Me'*Me)*Me'*ia_barra
-xm = inv(Mm'*Mm)*Mm'*vt_barra
+um = ka*kt*Ia;
 
-phi_e = xe(1) 
-phi_m = xm(1)
-gama_e = xe(2)
-gama_m = xm(2)
+ue_0 = ue(1:end-1);
+Ia_0 = Ia(1:end-1);
+Ia_n = Ia(2:end);
 
-Ra = (1 - phi_e)/gama_e
-La = - (Ra*h)/log(phi_e)
-f = (1 - phi_m) / gama_m
-J = -(f*h) / log(phi_m)
+me = [Ia_0, ue_0];
 
-Km = 1/f
-Km2 = gama_m/(1-phi_m)
+um_0 = um(1:end-1);
+Vt_0 = Vt(1:end-1);
+Vt_n = Vt(2:end);
+
+mm = [Vt_0, um_0];
+
+
+xe = me\Ia_n;
+
+xm = mm\Vt_n;
+
+Ra = (1 - xe(1))/xe(2);
+La = - (Ra*(t(2)-t(1)))/log(xe(1));
+f = (1-xm(1))/xm(2);
+j = -(f*(t(2)-t(1)))/log(xm(1));
+
+
+A = [ -Ra/La -kg/(kt*La); (ka*kt)/j -f/j];
+B = [1/La ; 0];
+C1 = [1 0];
+C2 = [0 1];
+D = 0;
+
+simin_va.time = t;
+simin_va.signals.values = Va;
+simin_va.signals.dimensions = 1;
+
+simin_vt.time = t;
+simin_vt.signals.values = Vt;
+simin_vt.signals.dimensions = 1;
+
+simin_ia.time = t;
+simin_ia.signals.values = Ia;
+simin_a.signals.dimensions = 1;
+
+
+%Funcao transferencia Vt/Va
+[n,d]=ss2tf(A,B,C2,D)
+
+
 
 
 
