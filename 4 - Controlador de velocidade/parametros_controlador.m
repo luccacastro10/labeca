@@ -1,9 +1,9 @@
 
-k = 1.38;
-tau = 0.0842;
+k = 1.384063;
+tau = 0.08420596;
 
 kp = 1/k; % para erro em regime permanente nulo, kp = 1/k (não sei o porquê)
-kt = 0.0159;
+kt = 0.015906;
 ka = k/kt;
 
 % calculo de ki para criticamente amortecido
@@ -27,7 +27,7 @@ zeta_ti = ((1+k*kp)/(2*tau)) * (sqrt((tau*Ti)/(k*kp)));
 
 ts_ti = 4/(wn_ti*zeta_ti);
 
-% Plotando root locus
+% Plotando root locus sistema
 numerador = [12.5 1];     
 denominador = [12.5 0]; 
 G = tf(numerador, denominador);
